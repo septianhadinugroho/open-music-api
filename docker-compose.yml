@@ -32,6 +32,9 @@ services:
       - PGPORT=${PGPORT}
       - HOST=${HOST}
       - PORT=${PORT}
+      - ACCESS_TOKEN_KEY=${ACCESS_TOKEN_KEY}
+      - REFRESH_TOKEN_KEY=${REFRESH_TOKEN_KEY}
+      - ACCESS_TOKEN_AGE=${ACCESS_TOKEN_AGE}
 
 volumes:
   openmusic-data:

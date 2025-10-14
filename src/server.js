@@ -1,29 +1,78 @@
 require('dotenv').config();
 
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const ClientError = require('./exceptions/ClientError');
 
 // Albums
+const albumsRouter = require('./api/albums');
 const AlbumsService = require('./services/postgres/AlbumsService');
 const AlbumsValidator = require('./validator/albums');
-const albumsRouter = require('./api/albums');
 
 // Songs
+const songsRouter = require('./api/songs');
 const SongsService = require('./services/postgres/SongsService');
 const SongsValidator = require('./validator/songs');
-const songsRouter = require('./api/songs');
+
+// Users
+const usersRouter = require('./api/users');
+const UsersService = require('./services/postgres/UsersService');
+const UsersValidator = require('./validator/users');
+
+// Authentications
+const authenticationsRouter = require('./api/authentications');
+const AuthenticationsService = require('./services/postgres/AuthenticationsService');
+const AuthenticationsValidator = require('./validator/authentications');
+const TokenManager = require('./tokenize/TokenManager');
+
+// Playlists
+const playlistsRouter = require('./api/playlists');
+const PlaylistsService = require('./services/postgres/PlaylistsService');
+const PlaylistsValidator = require('./validator/playlists');
 
 const init = async () => {
   const app = express();
 
   const albumsService = new AlbumsService();
   const songsService = new SongsService();
+  const usersService = new UsersService();
+  const authenticationsService = new AuthenticationsService();
+  const playlistsService = new PlaylistsService();
 
   app.use(express.json());
+
+  // Middleware untuk autentikasi JWT
+  const authMiddleware = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return next(); // Lanjutkan tanpa user jika tidak ada token
+    }
+    const token = authHeader.split(' ')[1];
+    try {
+      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+      req.user = decoded; // simpan payload token di request
+    } catch (error) {
+      // Abaikan token yang tidak valid, anggap sebagai non-authenticated
+    }
+    return next();
+  };
+
+  app.use(authMiddleware);
 
   // Routes
   app.use('/albums', albumsRouter(albumsService, AlbumsValidator));
   app.use('/songs', songsRouter(songsService, SongsValidator));
+  app.use('/users', usersRouter(usersService, UsersValidator));
+  app.use(
+    '/authentications',
+    authenticationsRouter(
+      authenticationsService,
+      usersService,
+      TokenManager,
+      AuthenticationsValidator,
+    ),
+  );
+  app.use('/playlists', playlistsRouter(playlistsService, songsService, PlaylistsValidator));
 
   // Custom Error Handling Middleware
   app.use((error, req, res, next) => {
@@ -44,19 +93,9 @@ const init = async () => {
     return next();
   });
 
-  // 404 Not Found Middleware for undefined routes
-  app.use((req, res) => {
-    res.status(404).json({
-      status: 'fail',
-      message: 'Resource yang Anda minta tidak ditemukan',
-    });
-  });
-
-  const host = process.env.HOST || 'localhost';
   const port = process.env.PORT || 5000;
-
-  app.listen(port, host, () => {
-    console.log(`Server berjalan pada http://${host}:${port}`);
+  app.listen(port, () => {
+    console.log(`Server berjalan pada port ${port}`);
   });
 };
 
