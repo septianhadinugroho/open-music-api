@@ -8,4 +8,14 @@ const PostSongToPlaylistPayloadSchema = Joi.object({
   songId: Joi.string().required(),
 });
 
-module.exports = { PostPlaylistPayloadSchema, PostSongToPlaylistPayloadSchema };
+// Skema baru
+const PostCollaborationPayloadSchema = Joi.object({
+  playlistId: Joi.string().required(),
+  userId: Joi.string().required(),
+});
+
+module.exports = {
+  PostPlaylistPayloadSchema,
+  PostSongToPlaylistPayloadSchema,
+  PostCollaborationPayloadSchema, // Ekspor skema baru
+};

@@ -25,6 +25,9 @@ const AuthenticationsService = require('./services/postgres/AuthenticationsServi
 const AuthenticationsValidator = require('./validator/authentications');
 const TokenManager = require('./tokenize/TokenManager');
 
+// Collaborations
+const CollaborationsService = require('./services/postgres/CollaborationsService');
+
 // Playlists
 const playlistsRouter = require('./api/playlists');
 const PlaylistsService = require('./services/postgres/PlaylistsService');
@@ -33,11 +36,12 @@ const PlaylistsValidator = require('./validator/playlists');
 const init = async () => {
   const app = express();
 
+  const collaborationsService = new CollaborationsService();
   const albumsService = new AlbumsService();
   const songsService = new SongsService();
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
-  const playlistsService = new PlaylistsService();
+  const playlistsService = new PlaylistsService(collaborationsService);
 
   app.use(express.json());
 
@@ -72,7 +76,13 @@ const init = async () => {
       AuthenticationsValidator,
     ),
   );
-  app.use('/playlists', playlistsRouter(playlistsService, songsService, PlaylistsValidator));
+  app.use('/playlists', playlistsRouter(
+    playlistsService,
+    songsService,
+    collaborationsService,
+    usersService,
+    PlaylistsValidator
+  ));
 
   // Custom Error Handling Middleware
   app.use((error, req, res, next) => {

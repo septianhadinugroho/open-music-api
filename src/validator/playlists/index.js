@@ -1,5 +1,9 @@
 const InvariantError = require('../../exceptions/InvariantError');
-const { PostPlaylistPayloadSchema, PostSongToPlaylistPayloadSchema } = require('./schema');
+const {
+  PostPlaylistPayloadSchema,
+  PostSongToPlaylistPayloadSchema,
+  PostCollaborationPayloadSchema, // Impor skema baru
+} = require('./schema');
 
 const PlaylistsValidator = {
   validatePostPlaylistPayload: (payload) => {
@@ -12,6 +16,13 @@ const PlaylistsValidator = {
     const validationResult = PostSongToPlaylistPayloadSchema.validate(payload);
     if (validationResult.error) {
         throw new InvariantError(validationResult.error.message);
+    }
+  },
+  // Fungsi validasi baru
+  validatePostCollaborationPayload: (payload) => {
+    const validationResult = PostCollaborationPayloadSchema.validate(payload);
+    if (validationResult.error) {
+      throw new InvariantError(validationResult.error.message);
     }
   },
 };

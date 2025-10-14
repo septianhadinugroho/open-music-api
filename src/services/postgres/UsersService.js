@@ -59,6 +59,18 @@ class UsersService {
     }
     return id;
   }
+
+  async getUserById(userId) {
+    const query = {
+      text: 'SELECT id, username, fullname FROM users WHERE id = $1',
+      values: [userId],
+    };
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new NotFoundError('User tidak ditemukan');
+    }
+  }
 }
 
 module.exports = UsersService;

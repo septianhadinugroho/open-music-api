@@ -5,8 +5,10 @@ const NotFoundError = require('../../exceptions/NotFoundError');
 const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class PlaylistsService {
-  constructor() {
+  // Tambahkan collaborationsService di constructor
+  constructor(collaborationsService) {
     this._pool = new Pool();
+    this._collaborationsService = collaborationsService;
   }
 
   async addPlaylist({ name, owner }) {
@@ -22,12 +24,15 @@ class PlaylistsService {
     return result.rows[0].id;
   }
 
+  // Modifikasi query untuk menyertakan playlist kolaborasi
   async getPlaylists(owner) {
     const query = {
       text: `SELECT p.id, p.name, u.username
              FROM playlists p
              LEFT JOIN users u ON u.id = p.owner
-             WHERE p.owner = $1`,
+             LEFT JOIN collaborations c ON c.playlist_id = p.id
+             WHERE p.owner = $1 OR c.user_id = $1
+             GROUP BY p.id, u.username`,
       values: [owner],
     };
     const { rows } = await this._pool.query(query);
@@ -95,7 +100,7 @@ class PlaylistsService {
       throw new InvariantError('Lagu gagal dihapus dari playlist');
     }
   }
-  
+
   async verifyPlaylistOwner(id, owner) {
     const query = {
       text: 'SELECT * FROM playlists WHERE id = $1',
@@ -111,6 +116,22 @@ class PlaylistsService {
     }
   }
   
+  // Ganti verifyPlaylistOwner dengan verifyPlaylistAccess
+  async verifyPlaylistAccess(playlistId, userId) {
+    try {
+      await this.verifyPlaylistOwner(playlistId, userId);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+      try {
+        await this._collaborationsService.verifyCollaborator(playlistId, userId);
+      } catch {
+        throw error;
+      }
+    }
+  }
+
   async verifySongId(songId) {
     const query = {
         text: 'SELECT id FROM songs WHERE id = $1',
@@ -120,6 +141,30 @@ class PlaylistsService {
     if (!result.rows.length) {
         throw new NotFoundError('Lagu dengan id tersebut tidak ditemukan');
     }
+  }
+
+  // Fungsi baru untuk aktivitas playlist
+  async addPlaylistActivity(playlistId, songId, userId, action) {
+    const id = `history-${nanoid(16)}`;
+    const query = {
+      text: 'INSERT INTO playlist_song_activities (id, playlist_id, song_id, user_id, action) VALUES ($1, $2, $3, $4, $5)',
+      values: [id, playlistId, songId, userId, action],
+    };
+    await this._pool.query(query);
+  }
+
+  async getPlaylistActivities(playlistId) {
+    const query = {
+      text: `SELECT u.username, s.title, psa.action, psa.time
+            FROM playlist_song_activities psa
+            JOIN users u ON psa.user_id = u.id
+            JOIN songs s ON psa.song_id = s.id
+            WHERE psa.playlist_id = $1
+            ORDER BY psa.time ASC`,
+      values: [playlistId],
+    };
+    const result = await this._pool.query(query);
+    return result.rows;
   }
 }
 
