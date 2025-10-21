@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Service for the PostgreSQL Database
   db:
     image: postgres:15-alpine
     container_name: openmusic_db
@@ -14,27 +13,67 @@ services:
       - "5432:5432"
     volumes:
       - openmusic-data:/var/lib/postgresql/data
-
-  # Service for the Node.js Application
+  
+  redis:
+    image: redis:7-alpine
+    container_name: openmusic_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - openmusic-redis-data:/data
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: openmusic_rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
   app:
     container_name: openmusic_api
-    build: . # Build the image from the Dockerfile in the current directory
+    build: .
     restart: always
     ports:
       - "${PORT}:${PORT}"
     depends_on:
-      - db # Wait for the db service to start before starting the app
+      - db
+      - redis
+      - rabbitmq
     environment:
+      # Postgres
       - PGUSER=${PGUSER}
       - PGPASSWORD=${PGPASSWORD}
       - PGDATABASE=${PGDATABASE}
-      - PGHOST=db # Important: The host is now the service name 'db'
+      - PGHOST=db
       - PGPORT=${PGPORT}
+      # App
       - HOST=${HOST}
       - PORT=${PORT}
+      - NODE_ENV=development
+      # JWT
       - ACCESS_TOKEN_KEY=${ACCESS_TOKEN_KEY}
       - REFRESH_TOKEN_KEY=${REFRESH_TOKEN_KEY}
       - ACCESS_TOKEN_AGE=${ACCESS_TOKEN_AGE}
+      # Redis
+      - REDIS_SERVER=redis
+      # RabbitMQ
+      - RABBITMQ_SERVER=amqp://guest:guest@rabbitmq
+      # SMTP
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      # Storage
+      - UPLOAD_PATH=uploads/images
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+      - openmusic-uploads:/usr/src/app/uploads 
 
 volumes:
   openmusic-data:
+  openmusic-redis-data:
+  openmusic-uploads:

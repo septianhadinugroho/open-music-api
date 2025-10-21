@@ -1,25 +1,32 @@
 {
-  "name": "open-music-api-v2",
-  "version": "2.0.0",
-  "description": "OpenMusic API Version 2",
+  "name": "open-music-api-v3",
+  "version": "3.0.0",
+  "description": "OpenMusic API Version 3",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "start-dev": "nodemon src/server.js",
-    "migrate": "node-pg-migrate"
+    "migrate": "node-pg-migrate",
+    "consumer": "node src/consumer.js"
   },
   "author": "septianhadinugroho",
   "license": "ISC",
   "dependencies": {
+    "amqplib": "^0.10.3",
     "auto-bind": "^4.0.0",
+    "aws-sdk": "^2.1500.0",
     "bcrypt": "^5.1.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "joi": "^17.7.0",
     "jsonwebtoken": "^9.0.0",
+    "multer": "^2.0.2",
     "nanoid": "^3.3.4",
     "node-pg-migrate": "^6.2.2",
-    "pg": "^8.8.0"
+    "nodemailer": "^7.0.9",
+    "path": "^0.12.7",
+    "pg": "^8.8.0",
+    "redis": "^4.6.13"
   },
   "devDependencies": {
     "eslint": "^8.28.0",

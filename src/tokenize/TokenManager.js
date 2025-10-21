@@ -1,20 +1,20 @@
 const Jwt = require('jsonwebtoken');
 const InvariantError = require('../exceptions/InvariantError');
+const config = require('../utils/config'); 
 
 const TokenManager = {
   generateAccessToken: (payload) => {
-    // UBAH BARIS DI BAWAH INI
-    const expiresInNumber = parseInt(process.env.ACCESS_TOKEN_AGE, 10);
 
-    return Jwt.sign(payload, process.env.ACCESS_TOKEN_KEY, {
-      // GUNAKAN VARIABEL BARU DI SINI
+    const expiresInNumber = parseInt(config.jwt.accessTokenAge, 10); 
+
+    return Jwt.sign(payload, config.jwt.accessTokenKey, { 
       expiresIn: expiresInNumber,
     });
   },
-  generateRefreshToken: (payload) => Jwt.sign(payload, process.env.REFRESH_TOKEN_KEY),
+  generateRefreshToken: (payload) => Jwt.sign(payload, config.jwt.refreshTokenKey),
   verifyRefreshToken: (refreshToken) => {
     try {
-      const artifact = Jwt.verify(refreshToken, process.env.REFRESH_TOKEN_KEY);
+      const artifact = Jwt.verify(refreshToken, config.jwt.refreshTokenKey);
       return artifact;
     } catch (error) {
       throw new InvariantError('Refresh token tidak valid');
