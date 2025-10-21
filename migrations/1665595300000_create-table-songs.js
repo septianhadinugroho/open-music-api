@@ -5,7 +5,7 @@ exports.up = (pgm) => {
       primaryKey: true,
     },
     title: {
-      type: 'TEXT',
+      type: 'VARCHAR(255)',
       notNull: true,
     },
     year: {
@@ -13,11 +13,11 @@ exports.up = (pgm) => {
       notNull: true,
     },
     performer: {
-      type: 'TEXT',
+      type: 'VARCHAR(255)',
       notNull: true,
     },
     genre: {
-      type: 'TEXT',
+      type: 'VARCHAR(255)',
       notNull: true,
     },
     duration: {
