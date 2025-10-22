@@ -1,10 +1,10 @@
-// src/server.js
 require('dotenv').config();
-const config = require('./utils/config'); // Impor config
+const config = require('./utils/config');
+const multer = require('multer');
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const path = require('path'); // Impor path
+const path = require('path');
 const ClientError = require('./exceptions/ClientError');
 
 // --- Service Baru ---
@@ -75,7 +75,7 @@ const init = async () => {
 
   app.use(authMiddleware);
 
-  app.use(`/${config.storage.localUploadPath}`, express.static(path.join(__dirname, config.storage.localUploadPath)));
+  app.use(`/${config.storage.localUploadPath}`, express.static(path.join(__dirname, '..', config.storage.localUploadPath)));
 
   // Routes
   app.use('/albums', albumsRouter(albumsService, AlbumsValidator, storageService));
@@ -101,6 +101,13 @@ const init = async () => {
 
   app.use((error, req, res, next) => {
     if (error) {
+      if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({
+          status: 'fail',
+          message: 'Ukuran file terlalu besar, maks 512KB',
+        });
+      }
+
       if (error instanceof ClientError) {
         return res.status(error.statusCode).json({
           status: 'fail',

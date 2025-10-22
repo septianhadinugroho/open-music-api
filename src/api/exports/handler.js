@@ -18,9 +18,10 @@ class ExportsHandler {
 
   async postExportPlaylistHandler(req, res, next) {
     try {
+      const userId = this._verifyUserAccess(req);
+
       this._validator.validateExportPlaylistPayload(req.body);
       
-      const userId = this._verifyUserAccess(req);
       const { playlistId } = req.params;
       const { targetEmail } = req.body;
 
